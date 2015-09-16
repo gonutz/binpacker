@@ -29,6 +29,8 @@ even achieve a considerably better occupancy rate.
 */
 package binpacker
 
+import "errors"
+
 func New(width, height int) *Packer {
 	return &Packer{node{width: width, height: height}, width, height}
 }
@@ -44,8 +46,12 @@ type node struct {
 	width, height int
 }
 
-func (p *Packer) Insert(width, height int) Rect {
-	return toRect(insert(&p.root, width, height))
+func (p *Packer) Insert(width, height int) (Rect, error) {
+	n, err := insert(&p.root, width, height)
+	if err != nil {
+		return Rect{}, err
+	}
+	return toRect(n), nil
 }
 
 func toRect(node *node) Rect {
@@ -54,26 +60,28 @@ func toRect(node *node) Rect {
 
 type Rect struct{ X, Y, Width, Height int }
 
-func insert(n *node, width, height int) *node {
+var noSpace = errors.New("no more space in bin")
+
+func insert(n *node, width, height int) (*node, error) {
 	if n.left != nil || n.right != nil {
 		if n.left != nil {
-			newNode := insert(n.left, width, height)
+			newNode, _ := insert(n.left, width, height)
 			if newNode != nil {
-				return newNode
+				return newNode, nil
 			}
 		}
 		if n.right != nil {
-			newNode := insert(n.right, width, height)
+			newNode, _ := insert(n.right, width, height)
 			if newNode != nil {
-				return newNode
+				return newNode, nil
 			}
 		}
-		return nil // does not fit into either subtree
+		return nil, noSpace // does not fit into either subtree
 	}
 
 	// this node is a leaf, can we git the new rectangle here?
 	if width > n.width || height > n.height {
-		return nil // no space
+		return nil, noSpace
 	}
 
 	// the new cell will fit, split the remaining space along the shorter axis,
@@ -119,7 +127,7 @@ func insert(n *node, width, height int) *node {
 	// *occupied* space instead of free space. Its children spawn the resulting
 	// area of free space.
 	n.width, n.height = width, height
-	return n
+	return n, nil
 }
 
 func (p *Packer) Occupancy() float64 {

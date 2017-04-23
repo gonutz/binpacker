@@ -2,30 +2,32 @@
 This file was converted from C++ to Go. The following is the original author's
 file comment:
 
-Performs 'discrete online rectangle packing into a rectangular bin' by maintaining
-a binary tree of used and free rectangles of the bin. There are several variants
-of bin packing problems, and this packer is characterized by:
-- We're solving the 'online' version of the problem, which means that when we're adding
-  a rectangle, we have no information of the sizes of the rectangles that are going to
-  be packed after this one.
-- We are packing rectangles that are not rotated. I.e. the algorithm will not flip
-  a rectangle of (w,h) to be stored if it were a rectangle of size (h, w). There is no
-  restriction conserning UV mapping why this couldn't be done to achieve better
-  occupancy, but it's more work. Feel free to try it out.
-- The packing is done in discrete integer coordinates and not in rational/real numbers (floats).
+Performs 'discrete online rectangle packing into a rectangular bin' by
+maintaining a binary tree of used and free rectangles of the bin. There are
+several variants of bin packing problems, and this packer is characterized by:
+- We're solving the 'online' version of the problem, which means that when we're
+  adding a rectangle, we have no information of the sizes of the rectangles that
+  are going to be packed after this one.
+- We are packing rectangles that are not rotated. I.e. the algorithm will not
+  flip a rectangle of (w,h) to be stored if it were a rectangle of size (h, w).
+  There is no restriction conserning UV mapping why this couldn't be done to
+  achieve better occupancy, but it's more work. Feel free to try it out.
+- The packing is done in discrete integer coordinates and not in rational/real
+  numbers (floats).
 
-Internal memory usage is linear to the number of rectangles we've already packed.
+Internal memory usage is linear to the number of rectangles we've already
+packed.
 
 For more information, see
 - Rectangle packing: http://www.gamedev.net/community/forums/topic.asp?topic_id=392413
 - Packing lightmaps: http://www.blackpawn.com/texts/lightmaps/default.html
 
-Idea: Instead of just picking the first free rectangle to insert the new rect into,
-check all free ones (or maintain a sorted order) and pick the one that minimizes
-the resulting leftover area. There is no real reason to maintain a tree - in fact
-it's just redundant structuring. We could as well have two lists - one for free
-rectangles and one for used rectangles. This method would be faster and might
-even achieve a considerably better occupancy rate.
+Idea: Instead of just picking the first free rectangle to insert the new rect
+into, check all free ones (or maintain a sorted order) and pick the one that
+minimizes the resulting leftover area. There is no real reason to maintain a
+tree - in fact it's just redundant structuring. We could as well have two
+lists - one for free rectangles and one for used rectangles. This method would
+be faster and might even achieve a considerably better occupancy rate.
 */
 package binpacker
 

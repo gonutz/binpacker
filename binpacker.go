@@ -136,14 +136,14 @@ func (p *Packer) Occupancy() float64 {
 	return usedArea(&p.root) / float64(p.binWidth*p.binHeight)
 }
 
-func usedArea(node *node) float64 {
-	if node.left != nil || node.right != nil {
-		used := float64(node.Width * node.Height)
-		if node.left != nil {
-			used += usedArea(node.left)
+func usedArea(n *node) float64 {
+	if n.left != nil || n.right != nil {
+		used := float64(n.Width * n.Height)
+		if n.left != nil {
+			used += usedArea(n.left)
 		}
-		if node.right != nil {
-			used += usedArea(node.right)
+		if n.right != nil {
+			used += usedArea(n.right)
 		}
 		return used
 	}

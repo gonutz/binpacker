@@ -61,7 +61,7 @@ func (p *Packer) Insert(width, height int) (Rect, error) {
 	return n.Rect, nil
 }
 
-var noSpace = errors.New("no more space in bin")
+var noSpace = errors.New("insert: no more space in bin")
 
 func insert(n *node, width, height int) (*node, error) {
 	if n.left != nil || n.right != nil {
@@ -80,7 +80,7 @@ func insert(n *node, width, height int) (*node, error) {
 		return nil, noSpace // does not fit into either subtree
 	}
 
-	// this node is a leaf, can we git the new rectangle here?
+	// this node is a leaf, can we insert the new rectangle here?
 	if width > n.Width || height > n.Height {
 		return nil, noSpace
 	}
@@ -119,10 +119,11 @@ func insert(n *node, width, height int) (*node, error) {
 		}}
 	}
 
-	// Note that as a result of the above, it can happen that node->left or node->right
-	// is now a degenerate (zero area) rectangle. No need to do anything about it,
-	// like remove the nodes as "unnecessary" since they need to exist as children of
-	// this node (this node can't be a leaf anymore).
+	// Note that as a result of the above, it can happen that node->left or
+	// node->right is now a degenerate (zero area) rectangle. No need to do
+	// anything about it, like remove the nodes as "unnecessary" since they
+	// need to exist as children of this node (this node can't be a leaf
+	// anymore).
 
 	// This node is now a non-leaf, so shrink its area - it now denotes
 	// *occupied* space instead of free space. Its children spawn the resulting

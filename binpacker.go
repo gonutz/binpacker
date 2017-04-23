@@ -34,7 +34,11 @@ package binpacker
 import "errors"
 
 func New(width, height int) *Packer {
-	return &Packer{node{width: width, height: height}, width, height}
+	return &Packer{
+		root:      node{Rect: Rect{Width: width, Height: height}},
+		binWidth:  width,
+		binHeight: height,
+	}
 }
 
 type Packer struct {
@@ -43,24 +47,19 @@ type Packer struct {
 }
 
 type node struct {
-	left, right   *node
-	x, y          int
-	width, height int
+	Rect
+	left, right *node
 }
+
+type Rect struct{ X, Y, Width, Height int }
 
 func (p *Packer) Insert(width, height int) (Rect, error) {
 	n, err := insert(&p.root, width, height)
 	if err != nil {
 		return Rect{}, err
 	}
-	return toRect(n), nil
+	return n.Rect, nil
 }
-
-func toRect(node *node) Rect {
-	return Rect{node.x, node.y, node.width, node.height}
-}
-
-type Rect struct{ X, Y, Width, Height int }
 
 var noSpace = errors.New("no more space in bin")
 
@@ -82,42 +81,42 @@ func insert(n *node, width, height int) (*node, error) {
 	}
 
 	// this node is a leaf, can we git the new rectangle here?
-	if width > n.width || height > n.height {
+	if width > n.Width || height > n.Height {
 		return nil, noSpace
 	}
 
 	// the new cell will fit, split the remaining space along the shorter axis,
 	// that is probably more optimal.
-	w, h := n.width-width, n.height-height
+	restW, restH := n.Width-width, n.Height-height
 
-	if w < h {
+	if restW < restH {
 		// split the remaining space horizontally
-		n.left = &node{
-			x:      n.x + width,
-			y:      n.y,
-			width:  w,
-			height: height,
-		}
-		n.right = &node{
-			x:      n.x,
-			y:      n.y + height,
-			width:  n.width,
-			height: h,
-		}
+		n.left = &node{Rect: Rect{
+			X:      n.X + width,
+			Y:      n.Y,
+			Width:  restW,
+			Height: height,
+		}}
+		n.right = &node{Rect: Rect{
+			X:      n.X,
+			Y:      n.Y + height,
+			Width:  n.Width,
+			Height: restH,
+		}}
 	} else {
 		// split the remaining space vertically
-		n.left = &node{
-			x:      n.x,
-			y:      n.y + height,
-			width:  width,
-			height: h,
-		}
-		n.right = &node{
-			x:      n.x + width,
-			y:      n.y,
-			width:  w,
-			height: n.height,
-		}
+		n.left = &node{Rect: Rect{
+			X:      n.X,
+			Y:      n.Y + height,
+			Width:  width,
+			Height: restH,
+		}}
+		n.right = &node{Rect: Rect{
+			X:      n.X + width,
+			Y:      n.Y,
+			Width:  restW,
+			Height: n.Height,
+		}}
 	}
 
 	// Note that as a result of the above, it can happen that node->left or node->right
@@ -128,7 +127,7 @@ func insert(n *node, width, height int) (*node, error) {
 	// This node is now a non-leaf, so shrink its area - it now denotes
 	// *occupied* space instead of free space. Its children spawn the resulting
 	// area of free space.
-	n.width, n.height = width, height
+	n.Width, n.Height = width, height
 	return n, nil
 }
 
@@ -138,7 +137,7 @@ func (p *Packer) Occupancy() float64 {
 
 func usedArea(node *node) float64 {
 	if node.left != nil || node.right != nil {
-		used := float64(node.width * node.height)
+		used := float64(node.Width * node.Height)
 		if node.left != nil {
 			used += usedArea(node.left)
 		}

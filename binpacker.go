@@ -53,6 +53,35 @@ type node struct {
 
 type Rect struct{ X, Y, Width, Height int }
 
+// Enlarge will mark the previous space as completely occupied and insert the
+// new area right and down of the existing area.
+func (p *Packer) Enlarge(newWidth, newHeight int) error {
+	if newWidth < p.binWidth || newHeight < p.binHeight {
+		return errors.New("enlarge: new size is smaller")
+	}
+
+	p.root = node{
+		Rect: Rect{X: 0, Y: 0, Width: newWidth, Height: newHeight},
+		left: &node{Rect: Rect{
+			X:      0,
+			Y:      p.binHeight,
+			Width:  newWidth,
+			Height: newHeight - p.binHeight,
+		}},
+		right: &node{Rect: Rect{
+			X:      p.binWidth,
+			Y:      0,
+			Width:  newWidth - p.binWidth,
+			Height: p.binHeight,
+		}},
+	}
+
+	p.binWidth = newWidth
+	p.binHeight = newHeight
+
+	return nil
+}
+
 func (p *Packer) Insert(width, height int) (Rect, error) {
 	n, err := insert(&p.root, width, height)
 	if err != nil {
@@ -61,7 +90,7 @@ func (p *Packer) Insert(width, height int) (Rect, error) {
 	return n.Rect, nil
 }
 
-var noSpace = errors.New("insert: no more space in bin")
+var ErrNoMoreSpace = errors.New("insert: no more space in bin")
 
 func insert(n *node, width, height int) (*node, error) {
 	if n.left != nil || n.right != nil {
@@ -77,12 +106,12 @@ func insert(n *node, width, height int) (*node, error) {
 				return newNode, nil
 			}
 		}
-		return nil, noSpace // does not fit into either subtree
+		return nil, ErrNoMoreSpace
 	}
 
 	// this node is a leaf, can we insert the new rectangle here?
 	if width > n.Width || height > n.Height {
-		return nil, noSpace
+		return nil, ErrNoMoreSpace
 	}
 
 	// the new cell will fit, split the remaining space along the shorter axis,
@@ -133,12 +162,12 @@ func insert(n *node, width, height int) (*node, error) {
 }
 
 func (p *Packer) Occupancy() float64 {
-	return usedArea(&p.root) / float64(p.binWidth*p.binHeight)
+	return float64(usedArea(&p.root)) / float64(p.binWidth*p.binHeight)
 }
 
-func usedArea(n *node) float64 {
+func usedArea(n *node) int {
 	if n.left != nil || n.right != nil {
-		used := float64(n.Width * n.Height)
+		used := n.Width * n.Height
 		if n.left != nil {
 			used += usedArea(n.left)
 		}
